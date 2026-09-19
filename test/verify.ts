@@ -477,7 +477,19 @@ async function runTests() {
     const hasZeroChangeUpdate = updates.some((u) => (!u.completedWork || u.completedWork.diff === 0) && (!u.remainingWork || u.remainingWork.decr === 0));
     assert(!hasZeroChangeUpdate, 'Zero-delta updates must not be present');
 
-    console.log('  ✓ Work history decreases and increases verified successfully.');
+    // Verify member filtering strictly excludes unselected members
+    const workHistoryDevOneOnly = await apiProvider.getWorkHistory({
+      areaPath: 'Project\\Squad 1',
+      sprint: 'Sprint 1',
+      selectedMembers: ['Dev One'],
+      startDate: '06/07/2026',
+      endDate: '17/07/2026',
+    });
+    assert(Boolean(workHistoryDevOneOnly['Dev One']), 'Dev One must be present');
+    assert(!workHistoryDevOneOnly['Dev Two'], 'Dev Two must NOT be present when only Dev One is selected');
+    assert(Object.keys(workHistoryDevOneOnly).length === 1, 'Only 1 member should be returned in workHistory');
+
+    console.log('  ✓ Work history decreases, increases, and member filtering verified successfully.');
   } finally {
     globalThis.fetch = origFetch;
   }

@@ -679,6 +679,39 @@ export class AzureDevOpsApiProvider implements IDataProvider {
       titleMap.set(idStr, title);
     }
 
+    const normalizeName = (name: string): string => {
+      return (name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    };
+
+    const selectedMembers = options.selectedMembers && options.selectedMembers.length > 0
+      ? options.selectedMembers
+      : undefined;
+
+    const selectedMembersMap = new Map<string, string>();
+    if (selectedMembers) {
+      for (const m of selectedMembers) {
+        selectedMembersMap.set(normalizeName(m), m.trim());
+      }
+    }
+
+    const getMatchedMember = (name: string): string | null => {
+      if (!selectedMembers) return name; // No filter specified: include all
+      const norm = normalizeName(name);
+      if (selectedMembersMap.has(norm)) {
+        return selectedMembersMap.get(norm)!;
+      }
+      for (const [key, original] of selectedMembersMap.entries()) {
+        if (norm.includes(key) || key.includes(norm)) {
+          return original;
+        }
+      }
+      return null; // Not a selected member
+    };
+
     const personDailyData: WorkHistoryData = {};
     const personDailyTasks = new Map<string, Map<string, Map<string, TaskWorkItemSummary>>>();
     const taskSprintUpdates = new Map<string, TaskWorkUpdate[]>();
@@ -736,19 +769,23 @@ export class AzureDevOpsApiProvider implements IDataProvider {
 
               taskUpdates.push(updateEntry);
 
+              // Filter by selected members
+              const matchedAssignee = getMatchedMember(runningAssignee);
+              if (!matchedAssignee) continue;
+
               const dayKey = formatBrDate(dt);
-              if (!personDailyData[runningAssignee]) personDailyData[runningAssignee] = {};
-              if (!personDailyData[runningAssignee][dayKey]) {
-                personDailyData[runningAssignee][dayKey] = { completed: 0, remainingDec: 0, tasks: [] };
+              if (!personDailyData[matchedAssignee]) personDailyData[matchedAssignee] = {};
+              if (!personDailyData[matchedAssignee][dayKey]) {
+                personDailyData[matchedAssignee][dayKey] = { completed: 0, remainingDec: 0, tasks: [] };
               }
 
-              if (compDiff !== 0) personDailyData[runningAssignee][dayKey].completed += compDiff;
-              if (remDecr !== 0) personDailyData[runningAssignee][dayKey].remainingDec += remDecr;
+              if (compDiff !== 0) personDailyData[matchedAssignee][dayKey].completed += compDiff;
+              if (remDecr !== 0) personDailyData[matchedAssignee][dayKey].remainingDec += remDecr;
 
-              if (!personDailyTasks.has(runningAssignee)) {
-                personDailyTasks.set(runningAssignee, new Map());
+              if (!personDailyTasks.has(matchedAssignee)) {
+                personDailyTasks.set(matchedAssignee, new Map());
               }
-              const personDays = personDailyTasks.get(runningAssignee)!;
+              const personDays = personDailyTasks.get(matchedAssignee)!;
               if (!personDays.has(dayKey)) {
                 personDays.set(dayKey, new Map());
               }
@@ -818,6 +855,39 @@ export class AzureDevOpsApiProvider implements IDataProvider {
     const taskIds = await this.queryWiqlTaskIds(options.areaPath, options.sprint);
     const reassignments: ReassignmentItem[] = [];
 
+    const normalizeName = (name: string): string => {
+      return (name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    };
+
+    const selectedMembers = options.selectedMembers && options.selectedMembers.length > 0
+      ? options.selectedMembers
+      : undefined;
+
+    const selectedMembersMap = new Map<string, string>();
+    if (selectedMembers) {
+      for (const m of selectedMembers) {
+        selectedMembersMap.set(normalizeName(m), m.trim());
+      }
+    }
+
+    const getMatchedMember = (name: string): string | null => {
+      if (!selectedMembers) return name;
+      const norm = normalizeName(name);
+      if (selectedMembersMap.has(norm)) {
+        return selectedMembersMap.get(norm)!;
+      }
+      for (const [key, original] of selectedMembersMap.entries()) {
+        if (norm.includes(key) || key.includes(norm)) {
+          return original;
+        }
+      }
+      return null;
+    };
+
     const sDate = parseBrDate(options.startDate, 'Start Date');
     const eDate = parseBrDate(options.endDate, 'End Date');
     eDate.setHours(23, 59, 59, 999);
@@ -841,6 +911,10 @@ export class AzureDevOpsApiProvider implements IDataProvider {
             const toName = (newVal?.displayName || newVal?.uniqueName || newVal || '').trim();
 
             if (fromName === toName) continue;
+
+            const matchedFrom = getMatchedMember(fromName);
+            const matchedTo = getMatchedMember(toName);
+            if (selectedMembers && !matchedFrom && !matchedTo) continue;
 
             const dStr = f['System.ChangedDate']?.newValue || f['System.AuthorizedDate']?.newValue;
             const changeDate = parseAzureDateTime(dStr);
