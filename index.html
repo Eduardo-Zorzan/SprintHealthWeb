@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevOps Sprint Health Pro</title>
+    <meta name="description" content="Azure DevOps Sprint Health insights, Burndown charts, Time Registration, and Reassignments tracking." />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Left Configuration Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Right Main Content Area -->
+      <div class="main-wrapper">
+        <!-- Top Header Bar -->
+        <header class="tabs-header-bar">
+          <div class="header-left">
+            <button type="button" id="btn-toggle-sidebar" class="btn-sidebar-toggle" title="Ocultar barra de configuração" aria-label="Ocultar barra de configuração">
+              <svg class="icon-sidebar-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+                <path d="m14 9-3 3 3 3"></path>
+              </svg>
+              <svg class="icon-sidebar-expand" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+                <path d="m12 9 3 3-3 3"></path>
+              </svg>
+            </button>
+            <div class="header-title">
+              <h2>Sprint Health Dashboard</h2>
+            </div>
+          </div>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <main class="tab-content-container">
+          <section id="tab-pane-sprint" class="tab-pane active" role="region" aria-label="Sprint Health"></section>
+
+          <!-- Shared System Log (Bottom) -->
+          <footer id="system-log-container"></footer>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
